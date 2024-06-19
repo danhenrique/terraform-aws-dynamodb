@@ -1,19 +1,15 @@
-module "iam_role_with_policies" {
-  source               = "github.com/DanHenrique/terraform-aws-iam-role?ref=v1.0.1"
-  role_name            = "ExampleRole"
-  assume_role_policy_document = file("./role/role.json")
-
-  policies = [
-    {
-      name        = "ExamplePolicy"
-      description = "Policy for resource access"
-      document    = file("./policy/policy.json")
-    }
-    # Adicione mais políticas conforme necessário
-  ]
-
+module "dynamodb_table" {
+  source             = "../"
+  table_name         = "my-table"
+  billing_mode       = "PAY_PER_REQUEST"
+  pk_name            = "pk"
+  pk_type            = "S"
+  sk_name            = "sk"
+  sk_type            = "S"
+  ttl_enabled        = true
+  ttl_attribute_name = "ttl"
   tags = {
     creator        = "danhenrique"
-    git_repository = "https://github.com/DanHenrique/terraform-aws-iam-role"
+    git_repository = "https://github.com/DanHenrique/terraform-aws-dynamodb"
   }
 }

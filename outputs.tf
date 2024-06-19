@@ -1,9 +1,9 @@
-output "role_arn" {
-  value = aws_iam_role.role.arn
+output "table_name" {
+  description = "The name of the DynamoDB table"
+  value       = aws_dynamodb_table.table.name
 }
 
-output "policy_arns" {
-  value = {
-    for name, policy in aws_iam_policy.policies : name => policy.arn
-  }
+output "table_arn" {
+  description = "The ARN of the DynamoDB table"
+  value       = aws_dynamodb_table.table.arn
 }

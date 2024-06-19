@@ -1,58 +1,81 @@
-# Terraform AWS IAM Module
+# Terraform AWS DynamoDB Module
 
-This Terraform module creates an AWS IAM Role along with its associated policies.
+This Terraform module creates a DynamoDB table in AWS.
 
 ## Features
 
-- Create an IAM Role in AWS.
-- Create policies in AWS.
-- Attach policies to the IAM Role.
+- Create a DynamoDB table
 
 ## Usage
 
 ```hcl
-module "iam_role_with_policies" {
-  source               = "github.com/DanHenrique/terraform-aws-lambda?ref=v1.0.0"
-  role_name            = "ExampleRole"
-  assume_role_policy_document = file("./role/role.json")
-
-  policies = [
-    {
-      name        = "ExamplePolicy"
-      description = "Policy for resource access"
-      document    = file("./policy/policy.json")
-    }
-    # Adicione mais políticas conforme necessário
-  ]
+module "dynamodb_table" {
+  source             = "github.com/DanHenrique/terraform-aws-dynamodb?ref=v1.0.0"
+  table_name         = "my-table"
+  billing_mode       = "PAY_PER_REQUEST"
+  pk_name            = "pk"
+  pk_type            = "S"
+  sk_name            = "sk"
+  sk_type            = "S"
+  ttl_enabled        = true
+  ttl_attribute_name = "ttl"
+  tags = {
+    creator        = "danhenrique"
+    git_repository = "https://github.com/DanHenrique/terraform-aws-dynamodb"
+  }
 }
-
 ```
+
+### Terraform steps
+
+1. **Initialize Terraform**:
+  This command prepares the working directory by downloading the necessary plugins.
+
+    ```bash
+    terraform init
+    ```
+
+2. Check the Execution Plan:
+  Create an execution plan to see the changes Terraform will make to the infrastructure.
+
+    ```bash
+    terraform plan -out=tfplan
+    ```
+
+3. Apply the Execution Plan:
+  Apply the planned changes to create/modify the resources in your infrastructure.
+
+    ```bash
+    terraform apply tfplan
+    ```
+
+4. (Optional) Destroy the Resources:
+  If you need to remove all resources managed by Terraform, use the destroy command.
+
+    ```bash
+    terraform destroy
+    ```
 
 ## Inputs
 
-| Name               | Description                                      | Type                | Default | Required |
-|--------------------|--------------------------------------------------|---------------------|---------|----------|
-| role_name          | The name of the IAM Role to create               | string              | n/a     | yes      |
-| assume_role_policy_document | Link to a JSON file containing the IAM policy document that grants an entity permission to assume the role | string | `null` | yes |
-| policies           | List of policies to attach to the IAM Role      | list(object({name = string, description = string, document = string})) | `[]` | yes |
-
-### `policies` Inputs
-
-Each object in the `policies` list should contain the following fields:
-
-| Name        | Description                                        | Type   | Required |
-|-------------|----------------------------------------------------|:------:|:--------:|
-| name        | The name of the policy                             | string | yes      |
-| description | The description of the policy                      | string | yes      |
-| document    | Link to a JSON file containing the policy document | string | yes      |
-
+| Input               | Description                                                  | Example                      |
+|---------------------|--------------------------------------------------------------|------------------------------|
+| `table_name`        | The name of the DynamoDB table.                              | `"my-table"`                 |
+| `billing_mode`      | The billing mode of the DynamoDB table.                      | `"PAY_PER_REQUEST"`          |
+| `pk_name`           | The name of the partition key.                               | `"pk"`                       |
+| `pk_type`           | The type of the partition key.                               | `"S"`                        |
+| `sk_name`           | The name of the sort key.                                    | `"sk"`                       |
+| `sk_type`           | The type of the sort key.                                    | `"S"`                        |
+| `ttl_enabled`       | Whether TTL is enabled for the table.                        | `true`                       |
+| `ttl_attribute_name`| The name of the TTL attribute.                               | `"ttl"`                      |
+| `tags`              | A map of tags to add to the DynamoDB table.                  | `{creator: "danhenrique"...}`|
 
 ## Outputs
 
 | Name                  | Description                                           |
 |-----------------------|-------------------------------------------------------|
-| role_id               | The ID of the IAM Role created by this module.        |
-| policy_arns           | The ARNs of the IAMs Policies created by this module. |
+| table_name            | The table name.                                       |
+| table_arn             | The table arn.                                        |
 
 ## Examples
 

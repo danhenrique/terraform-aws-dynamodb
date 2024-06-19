@@ -1,27 +1,32 @@
-resource "aws_iam_role" "role" {
-  name               = var.role_name
-  assume_role_policy = var.assume_role_policy_document
-  tags               = var.tags
-}
+resource "aws_dynamodb_table" "table" {
+  name           = var.table_name
 
-resource "aws_iam_policy" "policies" {
-  for_each = { for idx, policy in var.policies : idx => policy }
+  billing_mode   = var.billing_mode
+  write_capacity = var.billing_mode == "PROVISIONED" ? var.write_capacity : null
+  read_capacity  = var.billing_mode == "PROVISIONED" ? var.read_capacity : null
 
-  name        = each.value.name
-  description = each.value.description
-  policy      = each.value.document
-  tags        = var.tags
-}
+  hash_key       = var.pk_name
+  attribute {
+    name = var.pk_name
+    type = var.pk_type
+  }
 
-resource "aws_iam_role_policy_attachment" "role_attachments" {
-  for_each = { for idx, policy in aws_iam_policy.policies : idx => policy }
+  range_key = var.sk_name != "" ? var.sk_name : null
+  dynamic "attribute" {
+    for_each = var.sk_name != "" ? [1] : []
+    content {
+      name = var.sk_name
+      type = var.sk_type
+    }
+  }
 
-  role       = aws_iam_role.role.name
-  policy_arn = aws_iam_policy.policies[each.key].arn
-}
+  dynamic "ttl" {
+    for_each = var.ttl_enabled ? [1] : []
+    content {
+      attribute_name = var.ttl_attribute_name
+      enabled        = var.ttl_enabled
+    }
+  }
 
-resource "aws_iam_role_policy_attachment" "existing_policy_attachments" {
-  count      = length(var.existing_policy_arns)
-  role       = aws_iam_role.role.name
-  policy_arn = var.existing_policy_arns[count.index]
+  tags = merge(var.tags, { "module_maintainer" = "DanHenrique" })
 }
