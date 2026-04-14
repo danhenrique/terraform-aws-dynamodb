@@ -3,6 +3,88 @@ variable "table_name" {
   type        = string
 }
 
+variable "hash_key" {
+  description = "The attribute to use as the hash (partition) key"
+  type        = string
+}
+
+variable "attributes" {
+  description = "List of nested attribute definitions. Example: [{ name = \"id\", type = \"S\" }]"
+  type        = list(map(string))
+  validation {
+    condition = alltrue([
+      for attr in var.attributes :
+      contains(keys(attr), "name") && contains(keys(attr), "type")
+    ])
+    error_message = "Each attribute must have 'name' and 'type' keys."
+  }
+  validation {
+    condition = alltrue([
+      for attr in var.attributes :
+      contains(["S", "N", "B"], attr["type"])
+    ])
+    error_message = "Each attribute 'type' must be one of: 'S' (String), 'N' (Number), 'B' (Binary)."
+  }
+}
+
+# optional variable
+
+variable "range_key" {
+  description = "The attribute to use as the range (sort) key"
+  type        = string
+  default     = null
+}
+
+variable "ttl_attribute" {
+  description = "The name of the table attribute to store the TTL timestamp"
+  type        = string
+  default     = null
+}
+
+variable "global_secondary_indexes" {
+  description = "List of GSI configurations"
+  type        = any
+  default     = []
+  validation {
+    condition = alltrue([
+      for gsi in var.global_secondary_indexes :
+      contains(keys(gsi), "name") &&
+      contains(keys(gsi), "hash_key") &&
+      contains(keys(gsi), "projection_type")
+    ])
+    error_message = "Each GSI must have 'name', 'hash_key', and 'projection_type' keys."
+  }
+  validation {
+    condition = alltrue([
+      for gsi in var.global_secondary_indexes :
+      contains(["ALL", "KEYS_ONLY", "INCLUDE"], gsi["projection_type"])
+    ])
+    error_message = "Each GSI 'projection_type' must be one of: 'ALL', 'KEYS_ONLY', 'INCLUDE'."
+  }
+}
+
+variable "local_secondary_indexes" {
+  description = "List of LSI configurations"
+  type        = any
+  default     = []
+  validation {
+    condition = alltrue([
+      for lsi in var.local_secondary_indexes :
+      contains(keys(lsi), "name") &&
+      contains(keys(lsi), "range_key") &&
+      contains(keys(lsi), "projection_type")
+    ])
+    error_message = "Each LSI must have 'name', 'range_key', and 'projection_type' keys."
+  }
+  validation {
+    condition = alltrue([
+      for lsi in var.local_secondary_indexes :
+      contains(["ALL", "KEYS_ONLY", "INCLUDE"], lsi["projection_type"])
+    ])
+    error_message = "Each LSI 'projection_type' must be one of: 'ALL', 'KEYS_ONLY', 'INCLUDE'."
+  }
+}
+
 variable "billing_mode" {
   description = "Billing mode"
   type        = string
@@ -14,51 +96,32 @@ variable "billing_mode" {
 }
 
 variable "write_capacity" {
-  description = "The number of write units for this table"
+  description = "The number of write units for this table. Required when billing_mode is 'PROVISIONED'."
   type        = number
   default     = 5
+  validation {
+    condition     = var.billing_mode != "PROVISIONED" || var.write_capacity != null
+    error_message = "The 'write_capacity' variable is required when 'billing_mode' is 'PROVISIONED'."
+  }
 }
 
 variable "read_capacity" {
-  description = "The number of read units for this table"
+  description = "The number of read units for this table. Required when billing_mode is 'PROVISIONED'."
   type        = number
   default     = 5
+  validation {
+    condition     = var.billing_mode != "PROVISIONED" || var.read_capacity != null
+    error_message = "The 'read_capacity' variable is required when 'billing_mode' is 'PROVISIONED'."
+  }
 }
 
-variable "pk_name" {
-  description = "The name of the hash key in the table. Also known as the partition key (pk)."
-  type        = string
-}
-
-variable "pk_type" {
-  description = "The type of the hash key in the table. Also known as the partition key (pk)."
-  type        = string
-  default     = "S"
-}
-
-variable "sk_name" {
-  description = "The name of the range key in the table. Also known as the sort key (sk)."
-  type        = string
-  default     = ""
-}
-
-variable "sk_type" {
-  description = "The type of the range key in the table. Also known as the sort key (sk)."
-  type        = string
-  default     = "S"
-}
-
-variable "ttl_attribute_name" {
-  description = "The name of the TTL (Time To Live) attribute."
-  type        = string
-  default     = "ttl"
-}
-
-variable "ttl_enabled" {
-  description = "Whether TTL (Time To Live) is enabled"
+variable "deletion_protection_enabled" {
+  description = "Enables deletion protection for the table"
   type        = bool
   default     = false
 }
+
+# tags
 
 variable "tags" {
   description = "Tags to apply to the resources"
