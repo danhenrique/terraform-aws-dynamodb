@@ -21,7 +21,7 @@ module "dynamodb_table" {
   ttl_attribute_name = "ttl"
   tags = {
     creator        = "danhenrique"
-    git_repository = "https://github.com/DanHenrique/terraform-aws-dynamodb"
+    Repository = "https://github.com/DanHenrique/terraform-aws-dynamodb"
   }
 }
 ```
