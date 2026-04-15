@@ -17,6 +17,29 @@ resource "aws_dynamodb_table" "this" {
     }
   }
 
+  dynamic "global_secondary_index" {
+    for_each = var.global_secondary_indexes
+    content {
+      name            = global_secondary_index.value.name
+      hash_key        = global_secondary_index.value.hash_key
+      range_key       = lookup(global_secondary_index.value, "range_key", null)
+      projection_type = global_secondary_index.value.projection_type
+      non_key_attributes = lookup(global_secondary_index.value, "non_key_attributes", null)
+      write_capacity  = var.billing_mode == "PROVISIONED" ? lookup(global_secondary_index.value, "write_capacity", var.write_capacity) : null
+      read_capacity   = var.billing_mode == "PROVISIONED" ? lookup(global_secondary_index.value, "read_capacity", var.read_capacity) : null
+    }
+  }
+
+  dynamic "local_secondary_index" {
+    for_each = var.local_secondary_indexes
+    content {
+      name            = local_secondary_index.value.name
+      range_key       = local_secondary_index.value.range_key
+      projection_type = local_secondary_index.value.projection_type
+      non_key_attributes = lookup(local_secondary_index.value, "non_key_attributes", null)
+    }
+  }
+
   dynamic "ttl" {
     for_each = var.ttl_attribute != null ? [1] : []
     content {
