@@ -8,7 +8,7 @@ resource "aws_dynamodb_table" "this" {
   hash_key                    = var.hash_key
   range_key                   = var.range_key
   deletion_protection_enabled = var.deletion_protection_enabled
-  
+
   dynamic "attribute" {
     for_each = var.attributes
     content {
@@ -20,22 +20,31 @@ resource "aws_dynamodb_table" "this" {
   dynamic "global_secondary_index" {
     for_each = var.global_secondary_indexes
     content {
-      name            = global_secondary_index.value.name
-      hash_key        = global_secondary_index.value.hash_key
-      range_key       = lookup(global_secondary_index.value, "range_key", null)
-      projection_type = global_secondary_index.value.projection_type
+      name               = global_secondary_index.value.name
+      projection_type    = global_secondary_index.value.projection_type
       non_key_attributes = lookup(global_secondary_index.value, "non_key_attributes", null)
-      write_capacity  = var.billing_mode == "PROVISIONED" ? lookup(global_secondary_index.value, "write_capacity", var.write_capacity) : null
-      read_capacity   = var.billing_mode == "PROVISIONED" ? lookup(global_secondary_index.value, "read_capacity", var.read_capacity) : null
+      write_capacity     = var.billing_mode == "PROVISIONED" ? lookup(global_secondary_index.value, "write_capacity", var.write_capacity) : null
+      read_capacity      = var.billing_mode == "PROVISIONED" ? lookup(global_secondary_index.value, "read_capacity", var.read_capacity) : null
+
+      dynamic "key_schema" {
+        for_each = concat(
+          [{ attribute_name = global_secondary_index.value.hash_key, key_type = "HASH" }],
+          lookup(global_secondary_index.value, "range_key", null) != null ? [{ attribute_name = global_secondary_index.value.range_key, key_type = "RANGE" }] : []
+        )
+        content {
+          attribute_name = key_schema.value.attribute_name
+          key_type       = key_schema.value.key_type
+        }
+      }
     }
   }
 
   dynamic "local_secondary_index" {
     for_each = var.local_secondary_indexes
     content {
-      name            = local_secondary_index.value.name
-      range_key       = local_secondary_index.value.range_key
-      projection_type = local_secondary_index.value.projection_type
+      name               = local_secondary_index.value.name
+      range_key          = local_secondary_index.value.range_key
+      projection_type    = local_secondary_index.value.projection_type
       non_key_attributes = lookup(local_secondary_index.value, "non_key_attributes", null)
     }
   }
